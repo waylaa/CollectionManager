@@ -1,0 +1,89 @@
+<rxui:ReactiveUserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:rxui="http://reactiveui.net"
+             xmlns:vm="using:CollectionManager.Avalonia.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="CollectionManager.Avalonia.Views.MainView"
+             x:DataType="vm:MainViewViewModel"
+			 x:TypeArguments="vm:MainViewViewModel">
+	
+  <Design.DataContext>
+	  <vm:MainViewViewModel />
+  </Design.DataContext>
+
+	<Panel>
+		<DockPanel>
+			<Menu DockPanel.Dock="Top">
+				<MenuItem Header="File">
+					<MenuItem Header="Open">
+						<MenuItem Header="Collection (.osdb/.db)" />
+						<MenuItem Header="osu! Database" />
+					</MenuItem>
+
+					<MenuItem Header="Save">
+						<MenuItem Header="Collection (.osdb/.db)" />
+						<MenuItem Header="osu! Database" />
+					</MenuItem>
+
+					<MenuItem Header="Listing">
+						<MenuItem Header="All collections" />
+						<MenuItem Header="Missing beatmaps" />
+					</MenuItem>
+
+					<MenuItem Header="Clear" />
+				</MenuItem>
+			</Menu>
+
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="auto" />
+					<ColumnDefinition Width="10" />
+					<ColumnDefinition Width="*" />
+				</Grid.ColumnDefinitions>
+
+				<Grid.RowDefinitions>
+					<RowDefinition Height="auto" />
+					<RowDefinition />
+				</Grid.RowDefinitions>
+				
+				<AutoCompleteBox x:Name="CollectionsQuery"
+								 Watermark="Search collections"
+								 Grid.Column="0"
+								 Grid.Row="0" />
+
+				<DataGrid x:Name="Collections"
+						  Grid.Column="0"
+						  Grid.Row="1">
+					
+					<DataGrid.Columns>
+						<DataGridTextColumn Header="Name" />
+						<DataGridTextColumn Header="Count" />
+						<DataGridTextColumn Header="Missing" />
+					</DataGrid.Columns>
+				</DataGrid>
+				
+				<GridSplitter ResizeDirection="Columns"
+							  Margin="1"
+							  Grid.Column="1" />
+
+				<AutoCompleteBox x:Name="BeatmapsQuery"
+								 Watermark="Search beatmaps"
+								 Grid.Column="2"
+								 Grid.Row="0" />
+
+				<DataGrid x:Name="Beatmaps"
+						  Grid.Column="2"
+						  Grid.Row="1">
+
+					<DataGrid.Columns>
+						<DataGridTextColumn Header="Name" />
+						<DataGridTextColumn Header="Difficulty" />
+						<DataGridTextColumn Header="★" />
+					</DataGrid.Columns>
+				</DataGrid>
+			</Grid>
+		</DockPanel>
+	</Panel>
+</rxui:ReactiveUserControl>
