@@ -18,8 +18,8 @@
 			<Menu DockPanel.Dock="Top">
 				<MenuItem Header="File">
 					<MenuItem Header="Open">
-						<MenuItem Header="Collection (.osdb/.db)" />
-						<MenuItem Header="osu! Database" />
+						<MenuItem Header="Collection (.osdb/.db)" x:Name="AddCollections" />
+						<MenuItem Header="osu! Database" x:Name="AddDatabase" />
 					</MenuItem>
 
 					<MenuItem Header="Save">
@@ -48,19 +48,20 @@
 					<RowDefinition />
 				</Grid.RowDefinitions>
 				
-				<AutoCompleteBox x:Name="CollectionsQuery"
-								 Watermark="Search collections"
+				<AutoCompleteBox Watermark="Search collections"
 								 Grid.Column="0"
-								 Grid.Row="0" />
+								 Grid.Row="0"
+								 x:Name="CollectionsQuery" />
 
-				<DataGrid x:Name="Collections"
+				<DataGrid SelectionMode="Extended"
 						  Grid.Column="0"
-						  Grid.Row="1">
+						  Grid.Row="1"
+						  x:Name="Collections">
 					
 					<DataGrid.Columns>
-						<DataGridTextColumn Header="Name" />
-						<DataGridTextColumn Header="Count" />
-						<DataGridTextColumn Header="Missing" />
+						<DataGridTextColumn Header="Name" Binding="{Binding Name}" />
+						<DataGridTextColumn Header="Count" Binding="{Binding Beatmaps.Count}" />
+						<DataGridTextColumn Header="Missing" Binding="{Binding MissingBeatmaps.Count}" />
 					</DataGrid.Columns>
 				</DataGrid>
 				
@@ -68,14 +69,15 @@
 							  Margin="1"
 							  Grid.Column="1" />
 
-				<AutoCompleteBox x:Name="BeatmapsQuery"
-								 Watermark="Search beatmaps"
+				<AutoCompleteBox Watermark="Search beatmaps"
 								 Grid.Column="2"
-								 Grid.Row="0" />
+								 Grid.Row="0"
+								 x:Name="BeatmapsQuery" />
 
-				<DataGrid x:Name="Beatmaps"
+				<DataGrid SelectionMode="Extended"
 						  Grid.Column="2"
-						  Grid.Row="1">
+						  Grid.Row="1"
+						  x:Name="Beatmaps">
 
 					<DataGrid.Columns>
 						<DataGridTextColumn Header="Name" />

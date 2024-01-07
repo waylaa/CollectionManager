@@ -6,7 +6,6 @@ namespace CollectionManager.Core.Models;
 public sealed record OsuDatabase
 (
     int Version,
-    int BeatmapCount,
     ReadOnlyCollection<OsuBeatmap> Beatmaps
 );
 
@@ -14,14 +13,10 @@ public sealed record OsuBeatmap
 (
     string Artist,
     string Title,
-    string Creator,
     string DifficultyName,
     string AudioFileName,
     string Hash,
     Status RankStatus,
-    short CirclesCount,
-    short SlidersCount,
-    short SpinnersCount,
     object ApproachRate,
     object CircleSize,
     object HpDrain,
@@ -37,7 +32,6 @@ public sealed record OsuBeatmap
     Grade TaikoGrade,
     Grade CtbGrade,
     Grade ManiaGrade,
-    Ruleset Ruleset,
     DateTime LastPlayed,
     string FolderName,
     DateTime LastUpdated

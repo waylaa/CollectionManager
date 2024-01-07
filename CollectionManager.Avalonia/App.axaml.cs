@@ -3,8 +3,11 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
+using CollectionManager.Avalonia.Services;
 using CollectionManager.Avalonia.ViewModels;
 using CollectionManager.Avalonia.Views;
+using CollectionManager.Core.Readers;
+using Splat;
 
 namespace CollectionManager.Avalonia;
 
@@ -18,6 +21,13 @@ public partial class App : Application
         {
             RequestedThemeVariant = ThemeVariant.Dark;
         }
+
+        Locator.CurrentMutable
+            .RegisterConstantAnd<OsdbCollectionReader>()
+            .RegisterConstantAnd<OsuDatabaseReader>()
+            .RegisterConstantAnd<Window>(new MainWindow())
+            .RegisterConstantAnd<CollectionFileDialogService>()
+            .RegisterConstantAnd<DatabaseFileDialogService>();
     }
 
     public override void OnFrameworkInitializationCompleted()

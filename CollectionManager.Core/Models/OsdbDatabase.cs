@@ -8,7 +8,6 @@ public sealed record OsdbDatabase
     string Version,
     DateTime Date,
     string Editor,
-    int CollectionCount,
     ReadOnlyCollection<OsdbCollection> Collections
 );
 
@@ -16,9 +15,7 @@ public sealed record OsdbCollection
 (
     string Name,
     int OsuStatsId,
-    int BeatmapCount,
     ReadOnlyCollection<OsdbBeatmap> Beatmaps,
-    int MissingBeatmapCount,
     IReadOnlySet<string> MissingBeatmaps
 );
 

@@ -13,7 +13,7 @@ public sealed class OsuDatabaseReader
 
     private int _databaseVersion;
 
-    public Result<OsuDatabase> Read(string filepath)
+    public Result<OsuDatabase> ReadFile(string filepath)
     {
         try
         {
@@ -21,18 +21,118 @@ public sealed class OsuDatabaseReader
             _databaseReader = new(databaseStream);
 
             _databaseVersion = _databaseReader.ReadInt32();
-
-            _databaseReader.BaseStream.Seek(sizeof(int), SeekOrigin.Current);
-            _databaseReader.BaseStream.Seek(sizeof(bool), SeekOrigin.Current);
-            _databaseReader.BaseStream.Seek(sizeof(long), SeekOrigin.Current);
-            _databaseReader.ReadString();
+            
+            _databaseReader.BaseStream.Seek(sizeof(int) + sizeof(bool) + sizeof(long), SeekOrigin.Current); // FolderCount, IsAccountUnlocked, AccountUnlockDate.
+            ReadStringConditionally(); // Username.
 
             int beatmapCount = _databaseReader.ReadInt32();
-            ReadOnlyCollection<OsuBeatmap> beatmaps = ReadBeatmaps();
+            List<OsuBeatmap> beatmaps = new(capacity: beatmapCount);
+
+            for (int i = 0; i < beatmapCount; i++)
+            {
+                if (_databaseVersion < 20191106)
+                {
+                    _databaseReader.BaseStream.Seek(sizeof(int), SeekOrigin.Current); // Size in bytes of the beatmap entry.
+                }
+
+                string artist = ReadStringConditionally();
+                ReadStringConditionally(); // Artist in unicode.
+
+                string title = ReadStringConditionally();
+                ReadStringConditionally(); // Title in unicode.
+                ReadStringConditionally(); // Creator.
+
+                string difficultyName = ReadStringConditionally();
+                string audioFileName = ReadStringConditionally();
+                string hash = ReadStringConditionally();
+
+                ReadStringConditionally(); // Corresponding .osu file.
+
+                Status rankStatus = (Status)_databaseReader.ReadByte();
+
+                _databaseReader.BaseStream.Seek((sizeof(short) * 3) + sizeof(long), SeekOrigin.Current); // Circle, Slider, Spinner count, last modification time.
+
+                object approachRate = GetValueOrAlternative(_databaseReader.ReadSingle, _databaseReader.ReadByte, version => version > 20140609);
+                object circleSize = GetValueOrAlternative(_databaseReader.ReadSingle, _databaseReader.ReadByte, version => version > 20140609);
+                object hpDrain = GetValueOrAlternative(_databaseReader.ReadSingle, _databaseReader.ReadByte, version => version > 20140609);
+                object overallDifficulty = GetValueOrAlternative(_databaseReader.ReadSingle, _databaseReader.ReadByte, version => version > 20140609);
+
+                _databaseReader.BaseStream.Seek(sizeof(double), SeekOrigin.Current); // Slider velocity.
+
+                KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? standardModCombinatedStarRatings = GetValueOrDefault(() => ReadModCombinatedStarRatings(Ruleset.Osu), version => version >= 20140609);
+                KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? taikoModCombinatedStarRatings = GetValueOrDefault(() => ReadModCombinatedStarRatings(Ruleset.Taiko), version => version >= 20140609);
+                KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? ctbModCombinatedStarRatings = GetValueOrDefault(() => ReadModCombinatedStarRatings(Ruleset.Ctb), version => version >= 20140609);
+                KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? maniaModCombinatedStarRatings = GetValueOrDefault(() => ReadModCombinatedStarRatings(Ruleset.Mania), version => version >= 20140609);
+
+                _databaseReader.BaseStream.Seek(sizeof(int) * 3, SeekOrigin.Current); // Drain time in seconds, total time, audio preview in milliseconds.
+
+                (double minBpm, double maxBpm) bpm = ReadBpm();
+                int id = _databaseReader.ReadInt32();
+                int beatmapsetId = _databaseReader.ReadInt32();
+
+                _databaseReader.BaseStream.Seek(sizeof(int), SeekOrigin.Current); // ThreadId.
+
+                Grade standardGrade = (Grade)_databaseReader.ReadByte();
+                Grade taikoGrade = (Grade)_databaseReader.ReadByte();
+                Grade ctbGrade = (Grade)_databaseReader.ReadByte();
+                Grade maniaGrade = (Grade)_databaseReader.ReadByte();
+
+                _databaseReader.BaseStream.Seek(sizeof(short) + sizeof(float) + sizeof(byte), SeekOrigin.Current); // Local offset, stack leniency, ruleset.
+                ReadStringConditionally(); // Song source
+                ReadStringConditionally(); // Song tags.
+                _databaseReader.BaseStream.Seek(sizeof(short), SeekOrigin.Current); // Online offset.
+                ReadStringConditionally(); // Title font.
+                _databaseReader.BaseStream.Seek(sizeof(bool), SeekOrigin.Current); // Is beatmap unplayed.
+
+                DateTime lastPlayed = ReadDateTime();
+
+                _databaseReader.BaseStream.Seek(sizeof(bool), SeekOrigin.Current); // Is osz2.
+
+                string folderName = ReadStringConditionally();
+                DateTime lastUpdated = ReadDateTime();
+
+                // Is beatmap sound/skin ignored, is storyboard disabled, is video disabled, is visually overriden.
+                _databaseReader.BaseStream.Seek(sizeof(bool) * 5, SeekOrigin.Current);
+
+                if (_databaseVersion < 20140609)
+                {
+                    _databaseReader.BaseStream.Seek(sizeof(short), SeekOrigin.Current); // Skip unknown variable.
+                }
+
+                _databaseReader.BaseStream.Seek(sizeof(int) + sizeof(byte), SeekOrigin.Current); // Skip another last modification time, mania scroll speed.
+
+                beatmaps.Add(new OsuBeatmap
+                (
+                    artist,
+                    title,
+                    difficultyName,
+                    audioFileName,
+                    hash,
+                    rankStatus,
+                    approachRate,
+                    circleSize,
+                    hpDrain,
+                    overallDifficulty,
+                    standardModCombinatedStarRatings,
+                    taikoModCombinatedStarRatings,
+                    ctbModCombinatedStarRatings,
+                    maniaModCombinatedStarRatings,
+                    bpm,
+                    id,
+                    id,
+                    standardGrade,
+                    taikoGrade,
+                    ctbGrade,
+                    maniaGrade,
+                    lastPlayed,
+                    folderName,
+                    lastUpdated
+                ));
+            }
 
             _databaseReader.BaseStream.Seek(sizeof(int), SeekOrigin.Current);
 
-            return new OsuDatabase(_databaseVersion, beatmapCount, beatmaps);
+            return new OsuDatabase(_databaseVersion, beatmaps.AsReadOnly());
         }
         catch (Exception ex)
         {
@@ -42,131 +142,6 @@ public sealed class OsuDatabaseReader
         {
             _databaseReader.Dispose();
         }
-    }
-
-    private ReadOnlyCollection<OsuBeatmap> ReadBeatmaps()
-    {
-        _databaseReader.BaseStream.Seek(-sizeof(int), SeekOrigin.Current);
-        int beatmapCount = _databaseReader.ReadInt32();
-
-        List<OsuBeatmap> beatmaps = new(capacity: beatmapCount);
-
-        for (int i = 0; i < beatmapCount; i++)
-        {
-            if (_databaseVersion < 20191106)
-            {
-                // Size in bytes of the beatmap entry.
-                _databaseReader.BaseStream.Seek(sizeof(int), SeekOrigin.Current);
-            }
-
-            string artist = _databaseReader.ReadString();
-            _databaseReader.ReadString(); // Artist in unicode.
-
-            string title = _databaseReader.ReadString();
-            _databaseReader.ReadString(); // Title in unicode.
-
-            string creator = _databaseReader.ReadString();
-            string difficultyName = _databaseReader.ReadString();
-            string audioFileName = _databaseReader.ReadString();
-            string hash = _databaseReader.ReadString();
-
-            _databaseReader.ReadString(); // Corresponding .osu file.
-
-            Status rankStatus = (Status)_databaseReader.ReadByte();
-            short circlesCount = _databaseReader.ReadInt16();
-            short slidersCount = _databaseReader.ReadInt16();
-            short spinnersCount = _databaseReader.ReadInt16();
-
-            _databaseReader.BaseStream.Seek(sizeof(long), SeekOrigin.Current);
-
-            object approachRate = GetValueOnCorrectVersionOrAlternative(_databaseReader.ReadSingle, _databaseReader.ReadByte, version => version > 20140609);
-            object circleSize = GetValueOnCorrectVersionOrAlternative(_databaseReader.ReadSingle, _databaseReader.ReadByte, version => version > 20140609);
-            object hpDrain = GetValueOnCorrectVersionOrAlternative(_databaseReader.ReadSingle, _databaseReader.ReadByte, version => version > 20140609);
-            object overallDifficulty = GetValueOnCorrectVersionOrAlternative(_databaseReader.ReadSingle, _databaseReader.ReadByte, version => version > 20140609);
-
-            _databaseReader.BaseStream.Seek(sizeof(double), SeekOrigin.Current); // Slider velocity.
-
-            KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? standardModCombinatedStarRatings = GetValueOnCorrectVersionOrDefault(() => ReadModCombinatedStarRatings(Ruleset.Osu), version => version >= 20140609);
-            KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? taikoModCombinatedStarRatings = GetValueOnCorrectVersionOrDefault(() => ReadModCombinatedStarRatings(Ruleset.Taiko), version => version >= 20140609);
-            KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? ctbModCombinatedStarRatings = GetValueOnCorrectVersionOrDefault(() => ReadModCombinatedStarRatings(Ruleset.Ctb), version => version >= 20140609);
-            KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? maniaModCombinatedStarRatings = GetValueOnCorrectVersionOrDefault(() => ReadModCombinatedStarRatings(Ruleset.Mania), version => version >= 20140609);
-
-            _databaseReader.BaseStream.Seek(sizeof(int), SeekOrigin.Current); // Drain time in seconds.
-            _databaseReader.BaseStream.Seek(sizeof(int), SeekOrigin.Current); // Total time in milliseconds.
-            _databaseReader.BaseStream.Seek(sizeof(int), SeekOrigin.Current); // Audio preview time in milliseconds.
-
-            (double minBpm, double maxBpm) bpm = ReadBpm();
-            int difficultyId = _databaseReader.ReadInt32();
-            int id = _databaseReader.ReadInt32();
-            Grade standardGrade = (Grade)_databaseReader.ReadByte();
-            Grade taikoGrade = (Grade)_databaseReader.ReadByte();
-            Grade ctbGrade = (Grade)_databaseReader.ReadByte();
-            Grade maniaGrade = (Grade)_databaseReader.ReadByte();
-
-            _databaseReader.BaseStream.Seek(sizeof(short), SeekOrigin.Current); // Local offset.
-            _databaseReader.BaseStream.Seek(sizeof(float), SeekOrigin.Current); // Stack leniency.
-
-            Ruleset ruleset = (Ruleset)_databaseReader.ReadByte();
-
-            _databaseReader.ReadString(); // Song source
-            _databaseReader.ReadString(); // Song tags.
-            _databaseReader.BaseStream.Seek(sizeof(short), SeekOrigin.Current); // Online offset.
-            _databaseReader.ReadString(); // Title font.
-            _databaseReader.BaseStream.Seek(sizeof(bool), SeekOrigin.Current); // Is beatmap unplayed.
-
-            DateTime lastPlayed = ReadDateTime();
-
-            _databaseReader.BaseStream.Seek(sizeof(bool), SeekOrigin.Current); // Is osz2.
-
-            string folderName = _databaseReader.ReadString();
-            DateTime lastUpdated = ReadDateTime();
-
-            // Is beatmap sound/skin ignored, is storyboard disabled, is video disabled, is visually overriden.
-            _databaseReader.BaseStream.Seek(sizeof(bool) * 5, SeekOrigin.Current);
-
-            if (_databaseVersion < 20140609)
-            {
-                _databaseReader.BaseStream.Seek(sizeof(short), SeekOrigin.Current); // Skip unknown variable.
-            }
-
-            _databaseReader.BaseStream.Seek(sizeof(int), SeekOrigin.Current); // Skip another last modification time.
-            _databaseReader.BaseStream.Seek(sizeof(byte), SeekOrigin.Current); // Mania scroll speed.
-
-            beatmaps.Add(new OsuBeatmap
-            (
-                artist,
-                title,
-                creator,
-                difficultyName,
-                audioFileName,
-                hash,
-                rankStatus,
-                circlesCount,
-                slidersCount,
-                spinnersCount,
-                approachRate,
-                circleSize,
-                hpDrain,
-                overallDifficulty,
-                standardModCombinatedStarRatings,
-                taikoModCombinatedStarRatings,
-                ctbModCombinatedStarRatings,
-                maniaModCombinatedStarRatings,
-                bpm,
-                difficultyId,
-                id,
-                standardGrade,
-                taikoGrade,
-                ctbGrade,
-                maniaGrade,
-                ruleset,
-                lastPlayed,
-                folderName,
-                lastUpdated
-            ));
-        }
-
-        return beatmaps.AsReadOnly();
     }
 
     private KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? ReadModCombinatedStarRatings(Ruleset ruleset)
@@ -320,11 +295,11 @@ public sealed class OsuDatabaseReader
             : new DateTime(ticks, DateTimeKind.Utc);
     }
 
-    private object GetValueOnCorrectVersionOrAlternative<T, TAlt>(Func<T> input, Func<TAlt> altInput, Predicate<int> version)
+    private object GetValueOrAlternative<T, TAlt>(Func<T> input, Func<TAlt> altInput, Predicate<int> version)
         where T : notnull
         where TAlt : notnull
         => version(_databaseVersion) ? input() : altInput();
 
-    private T? GetValueOnCorrectVersionOrDefault<T>(Func<T> input, Predicate<int> version)
+    private T? GetValueOrDefault<T>(Func<T> input, Predicate<int> version)
         => version(_databaseVersion) ? input() : default;
 }

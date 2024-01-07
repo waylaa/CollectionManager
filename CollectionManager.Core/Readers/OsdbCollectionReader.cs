@@ -26,7 +26,7 @@ public sealed class OsdbCollectionReader
 
     private int _versionKey;
 
-    public Result<OsdbDatabase> Read(string filepath)
+    public Result<OsdbDatabase> ReadFile(string filepath)
     {
         using FileStream collectionStream = File.OpenRead(filepath);
         Result<MemoryStream> dataStreamResult = CopyOrDecompressCopy(collectionStream);
@@ -49,7 +49,7 @@ public sealed class OsdbCollectionReader
         for (int i = 0; i < collectionCount; i++)
         {
             string name = collectionReader.ReadString();
-            int osuStatsId = GetValueOnCorrectVersionOrDefault(collectionReader.ReadInt32, version => version is 7 or 8);
+            int osuStatsId = GetValueOrDefault(collectionReader.ReadInt32, version => version is 7 or 8);
             int beatmapCount = collectionReader.ReadInt32();
 
             List<OsdbBeatmap> beatmaps = new(capacity: beatmapCount);
@@ -59,14 +59,14 @@ public sealed class OsdbCollectionReader
                 beatmaps.Add(new OsdbBeatmap
                 (
                     Id: collectionReader.ReadInt32(),
-                    BeatmapsetId: GetValueOnCorrectVersionOrDefault(collectionReader.ReadInt32, version => version >= 2),
-                    Artist: GetValueOnCorrectVersionOrDefault(collectionReader.ReadString, version => version is not 1007 and not 1008),
-                    Title: GetValueOnCorrectVersionOrDefault(collectionReader.ReadString, version => version is not 1007 and not 1008),
-                    DifficultyName: GetValueOnCorrectVersionOrDefault(collectionReader.ReadString, version => version is not 1007 and not 1008),
+                    BeatmapsetId: GetValueOrDefault(collectionReader.ReadInt32, version => version >= 2),
+                    Artist: GetValueOrDefault(collectionReader.ReadString, version => version is not 1007 and not 1008),
+                    Title: GetValueOrDefault(collectionReader.ReadString, version => version is not 1007 and not 1008),
+                    DifficultyName: GetValueOrDefault(collectionReader.ReadString, version => version is not 1007 and not 1008),
                     Hash: collectionReader.ReadString(),
-                    Comments: GetValueOnCorrectVersionOrDefault(collectionReader.ReadString, version => version >= 4),
-                    Ruleset: (Ruleset)GetValueOnCorrectVersionOrDefault(collectionReader.ReadByte, version => version is >= 8 or >= 5 and not 1007 and not 1008),
-                    DifficultyRating: GetValueOnCorrectVersionOrDefault(collectionReader.ReadDouble, version => version is >= 8 or >= 6 and not 1007 and not 1008)
+                    Comments: GetValueOrDefault(collectionReader.ReadString, version => version >= 4),
+                    Ruleset: (Ruleset)GetValueOrDefault(collectionReader.ReadByte, version => version is >= 8 or >= 5 and not 1007 and not 1008),
+                    DifficultyRating: GetValueOrDefault(collectionReader.ReadDouble, version => version is >= 8 or >= 6 and not 1007 and not 1008)
                 ));
             }
 
@@ -88,9 +88,7 @@ public sealed class OsdbCollectionReader
             (
                 name,
                 osuStatsId,
-                beatmapCount,
                 beatmaps.AsReadOnly(),
-                missingBeatmapCount,
                 missingBeatmaps
             ));
         }
@@ -100,7 +98,7 @@ public sealed class OsdbCollectionReader
             return new InvalidDataException("File footer is invalid, this collection might be corrupted.");
         }
 
-        return new OsdbDatabase(version, date, editor, collectionCount, collections.AsReadOnly());
+        return new OsdbDatabase(version, date, editor, collections.AsReadOnly());
     }
 
     private Result<MemoryStream> CopyOrDecompressCopy(FileStream inputStream)
@@ -129,6 +127,6 @@ public sealed class OsdbCollectionReader
         return dataStream;
     }
 
-    private T? GetValueOnCorrectVersionOrDefault<T>(Func<T> input, Predicate<int> version)
+    private T? GetValueOrDefault<T>(Func<T> input, Predicate<int> version)
         => version(_versionKey) ? input() : default;
 }
