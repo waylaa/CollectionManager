@@ -7,12 +7,20 @@ using CollectionManager.Avalonia.Services;
 using CollectionManager.Avalonia.ViewModels;
 using CollectionManager.Avalonia.Views;
 using CollectionManager.Core.Readers;
+using Microsoft.Extensions.DependencyInjection;
+using ReactiveUI;
 using Splat;
+using Splat.Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CollectionManager.Avalonia;
 
 public partial class App : Application
 {
+    [NotNull]
+    internal static IServiceProvider? Services { get; private set; }
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -22,12 +30,22 @@ public partial class App : Application
             RequestedThemeVariant = ThemeVariant.Dark;
         }
 
-        Locator.CurrentMutable
-            .RegisterConstantAnd<OsdbCollectionReader>()
-            .RegisterConstantAnd<OsuDatabaseReader>()
-            .RegisterConstantAnd<Window>(new MainWindow())
-            .RegisterConstantAnd<CollectionFileDialogService>()
-            .RegisterConstantAnd<DatabaseFileDialogService>();
+        ServiceCollection di = new();
+
+        di.UseMicrosoftDependencyResolver();
+        Locator.CurrentMutable.InitializeSplat();
+        Locator.CurrentMutable.InitializeReactiveUI();
+
+        Services = di
+            .AddMemoryCache()
+            .AddSingleton<OsdbCollectionReader>()
+            .AddSingleton<OsuDatabaseReader>()
+            .AddSingleton<Window, MainWindow>()
+            .AddSingleton<CollectionFileDialogService>()
+            .AddSingleton<DatabaseFileDialogService>()
+            .BuildServiceProvider();
+
+        Services.UseMicrosoftDependencyResolver();
     }
 
     public override void OnFrameworkInitializationCompleted()
