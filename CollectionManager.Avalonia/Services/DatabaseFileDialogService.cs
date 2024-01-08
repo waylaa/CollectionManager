@@ -1,13 +1,16 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Platform.Storage;
+using CollectionManager.Avalonia.Extensions;
 using CollectionManager.Avalonia.Messages;
 using CollectionManager.Core.Infrastructure;
 using CollectionManager.Core.Models;
 using CollectionManager.Core.Readers;
+using Microsoft.Extensions.Caching.Memory;
 using ReactiveUI;
 using Splat;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
 namespace CollectionManager.Avalonia.Services;
@@ -16,9 +19,11 @@ internal sealed class DatabaseFileDialogService
 {
     private static readonly FilePickerFileType s_fileType = new("osu! Database") { Patterns = new[] { "*osu!.db" } };
 
-    private readonly Window _target = Locator.Current.GetService<Window>();
+    private readonly Window _target = Locator.Current.GetService<Window>()!;
 
-    private readonly OsuDatabaseReader _reader = Locator.Current.GetService<OsuDatabaseReader>();
+    private readonly OsuDatabaseReader _reader = Locator.Current.GetService<OsuDatabaseReader>()!;
+
+    private readonly IMemoryCache _cache = Locator.Current.GetService<IMemoryCache>()!;
 
     internal async Task GetDatabaseAsync()
     {
@@ -31,9 +36,20 @@ internal sealed class DatabaseFileDialogService
         });
 
         using IStorageFile database = files[0];
+
+        if (_cache.IsSame(IMemoryCacheKeys.DatabaseFilePath, database.Path.LocalPath))
+        {
+            return;
+        }
+
         Result<OsuDatabase> result = _reader.ReadFile(database.Path.LocalPath);
 
         if (!result.IsSuccessful)
+        {
+            return;
+        }
+
+        if (_cache.IsSame<ReadOnlyCollection<OsuBeatmap>, OsuBeatmap>(IMemoryCacheKeys.Beatmaps, result.Value.Beatmaps))
         {
             return;
         }
