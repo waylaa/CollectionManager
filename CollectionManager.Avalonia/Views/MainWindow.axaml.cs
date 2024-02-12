@@ -4,8 +4,5 @@ namespace CollectionManager.Avalonia.Views;
 
 public partial class MainWindow : AppWindow
 {
-    public MainWindow()
-    {
-        InitializeComponent();
-    }
+    public MainWindow() => InitializeComponent();
 }

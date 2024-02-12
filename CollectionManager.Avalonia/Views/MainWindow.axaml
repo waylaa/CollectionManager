@@ -4,11 +4,13 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:wnd="using:FluentAvalonia.UI.Windowing"
-        xmlns:views="clr-namespace:CollectionManager.Avalonia.Views"
+        xmlns:views="using:CollectionManager.Avalonia.Views"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="CollectionManager.Avalonia.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
         Title="CollectionManager">
-	
-        <views:MainView />
+
+	<Panel>
+		<views:MainView />
+	</Panel>
 </wnd:AppWindow>
