@@ -1,77 +1,136 @@
-﻿using CollectionManager.Avalonia.Messages;
-using CollectionManager.Avalonia.Services;
+﻿using CollectionManager.Avalonia.Services;
 using CollectionManager.Core.Models;
-using ReactiveUI;
-using ReactiveUI.Fody.Helpers;
-using Splat;
-using System;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Reactive;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.DependencyInjection;
+using CollectionManager.Avalonia.Messages;
+using CommunityToolkit.Mvvm.Messaging;
+using System.Linq;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Caching.Memory;
+using CollectionManager.Avalonia.Extensions;
+using Avalonia.Controls;
 
 namespace CollectionManager.Avalonia.ViewModels;
 
-public class MainViewViewModel : ViewModelBase
+public partial class MainViewViewModel : ViewModelBase
 {
-    [Reactive]
-    public bool IsDatabaseLoaded { get; set; }
+    public bool IsDatabaseAndCollectionsLoaded => IsDatabaseLoaded && IsAnyCollectionLoaded;
 
-    [Reactive]
-    public bool IsAnyCollectionLoaded { get; set; }
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(LoadCollectionsCommand), nameof(UnloadDatabaseCommand), nameof(GetAllBeatmapsCommand), nameof(CreateCollectionCommand))]
+    private bool _isDatabaseLoaded = false;
 
-    [Reactive]
-    public string CollectionQuery { get; set; }
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(DeleteCollectionCommand))]
+    private bool _isAnyCollectionLoaded = false;
 
-    [Reactive]
-    public string BeatmapQuery { get; set; }
+    [ObservableProperty]
+    private string _collectionsQuery = string.Empty;
 
-    [Reactive]
-    public ObservableCollection<OsdbCollection> LoadedCollections { get; set; } = [];
+    [ObservableProperty]
+    private string _beatmapsQuery = string.Empty;
 
-    [Reactive]
-    public ObservableCollection<OsuBeatmap> LoadedBeatmaps { get; set; } = [];
+    [ObservableProperty]
+    private ObservableCollection<OsdbCollection> _loadedCollections = [];
 
-    public ReactiveCommand<Unit, Unit> LoadDatabaseCommand { get; }
+    [ObservableProperty]
+    private ObservableCollection<OsuBeatmap> _loadedBeatmaps = [];
 
-    public ReactiveCommand<Unit, Unit> LoadCollectionsCommand { get; }
+    private readonly CollectionFileDialogService _collectionsService = Ioc.Default.GetRequiredService<CollectionFileDialogService>();
 
-    private readonly CollectionFileDialogService _collectionsService = Locator.Current.GetService<CollectionFileDialogService>();
+    private readonly DatabaseFileDialogService _databaseService = Ioc.Default.GetRequiredService<DatabaseFileDialogService>();
 
-    private readonly DatabaseFileDialogService _databaseService = Locator.Current.GetService<DatabaseFileDialogService>();
+    private readonly IMemoryCache _cache = Ioc.Default.GetRequiredService<IMemoryCache>();
 
     public MainViewViewModel()
     {
-        MessageBus.Current.Listen<CollectionsMessage>().Subscribe(message =>
+        Messenger.Register<CollectionsMessage>(this, (_, message) =>
         {
-            LoadedCollections = new(LoadedCollections.Union(message.Collections.AsEnumerable()));
-        });
-
-        MessageBus.Current.Listen<DatabaseMessage>().Subscribe(message =>
-        {
-            LoadedBeatmaps = new(message.Database.Beatmaps);
-        });
-
-        this.WhenAnyValue(x => x.CollectionQuery)
-            .Throttle(TimeSpan.FromMilliseconds(800))
-            .Subscribe(query =>
+            foreach (OsdbCollection collection in LoadedCollections.Except(message.Value))
             {
+                LoadedCollections.Add(collection);
+            }
 
-            });
+            IsAnyCollectionLoaded = LoadedCollections.Count > 0;
+        });
 
-        IObservable<bool> canExecuteWhenDatabaseIsLoaded = this.WhenAnyValue(x => x.IsDatabaseLoaded, selector: loadState => false);
-
-        LoadCollectionsCommand = ReactiveCommand.CreateFromTask(LoadCollections, canExecuteWhenDatabaseIsLoaded);
-        LoadCollectionsCommand.ThrownExceptions.Subscribe(ex => throw ex);
-
-        LoadDatabaseCommand = ReactiveCommand.CreateFromTask(LoadDatabaseAsync);
-        LoadDatabaseCommand.ThrownExceptions.Subscribe(ex => throw ex);
+        Messenger.Register<BeatmapsMessage>(this, (_, message) =>
+        {
+            IsDatabaseLoaded = message.Value.Count > 0;
+            LoadedBeatmaps = new(message.Value);
+        });
     }
 
+    [RelayCommand]
     private async Task LoadDatabaseAsync()
         => await _databaseService.GetDatabaseAsync();
 
-    private async Task LoadCollections()
+    [RelayCommand(CanExecute = nameof(IsDatabaseLoaded))]
+    private async Task LoadCollectionsAsync()
         => await _collectionsService.GetCollectionsAsync();
+
+    [RelayCommand(CanExecute = nameof(IsDatabaseLoaded))]
+    private void UnloadDatabase()
+    {
+        LoadedBeatmaps.Clear();
+        _cache.UnloadDatabase();
+    }
+
+    [RelayCommand(CanExecute = nameof(IsDatabaseLoaded))]
+    private void GetAllBeatmaps()
+        => LoadedBeatmaps = new(_cache.GetAllBeatmaps());
+
+    [RelayCommand(CanExecute = nameof(IsDatabaseLoaded))]
+    private void CreateCollection()
+    {
+
+    }
+
+    [RelayCommand(CanExecute = nameof(IsDatabaseAndCollectionsLoaded))]
+    private void DeleteCollection()
+    {
+
+    }
+
+    [RelayCommand(CanExecute = nameof(IsDatabaseAndCollectionsLoaded))]
+    private void CollectionSelectionChanged(SelectionChangedEventArgs args)
+    {
+        LoadedCollections = new(LoadedCollections.Union(new ObservableCollection<OsdbCollection>(args.AddedItems.OfType<OsdbCollection>())));
+    }
+
+    partial void OnCollectionsQueryChanged(string value)
+    {
+        ReadOnlyCollection<OsdbCollection> QueryCollections(string query) => _cache
+            .GetAllCollections()
+            .Where(x => x.Name.Contains(query))
+            .ToList()
+            .AsReadOnly() ?? ReadOnlyCollection<OsdbCollection>.Empty;
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            LoadedCollections = new(_cache.GetAllCollections());
+            return;
+        }
+        
+        LoadedCollections = new(QueryCollections(value));
+    }
+
+    partial void OnBeatmapsQueryChanged(string value)
+    {
+        ReadOnlyCollection<OsuBeatmap> QueryBeatmaps(string query) => _cache
+            .GetAllBeatmaps()
+            .Where(x => x.Title.Contains(query))
+            .ToList()
+            .AsReadOnly();
+
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            LoadedBeatmaps = new(_cache.GetAllBeatmaps());
+            return;
+        }
+
+        LoadedBeatmaps = new(QueryBeatmaps(value));
+    }
 }

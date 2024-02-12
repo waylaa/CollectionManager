@@ -9,17 +9,23 @@ namespace CollectionManager.Avalonia.Extensions;
 
 internal static class MemoryCacheExtensions
 {
+    /// <summary>
+    /// Gets all the currently cached .osdb collections.
+    /// </summary>
+    /// <param name="cache">The in-memory cache.</param>
+    /// <returns>[<see cref="ReadOnlyCollection{T}"/>] A read-only collection of cached .osdb collections or an empty read-only collection
+    /// if no .osdb collection has been loaded.</returns>
     internal static ReadOnlyCollection<OsdbCollection> GetAllCollections(this IMemoryCache cache)
-        => cache.Get<ReadOnlyCollection<OsdbCollection>>(MemoryCacheKeys.Collections)!;
+        => cache.Get<ReadOnlyCollection<OsdbCollection>>(MemoryCacheKeys.Collections) ?? ReadOnlyCollection<OsdbCollection>.Empty;
 
+    /// <summary>
+    /// Gets all the currently cached beatmaps.
+    /// </summary>
+    /// <param name="cache">The in-memory cache.</param>
+    /// <returns>[<see cref="ReadOnlyCollection{T}"/>] All the beatmaps stored in the 'Songs' folder of the osu! game folder
+    /// or an empty read-only collection if the osu! database is not loaded.</returns>
     internal static ReadOnlyCollection<OsuBeatmap> GetAllBeatmaps(this IMemoryCache cache)
-        => cache.Get<ReadOnlyCollection<OsuBeatmap>>(MemoryCacheKeys.Beatmaps)!;
-
-    internal static ReadOnlyCollection<OsdbCollection> QueryCollections(this IMemoryCache cache, string query)
-        => GetAllCollections(cache).Where(x => x.Name.Contains(query)).ToList().AsReadOnly();
-
-    internal static ReadOnlyCollection<OsuBeatmap> QueryBeatmaps(this IMemoryCache cache, string query)
-        => GetAllBeatmaps(cache).Where(x => x.Title.Contains(query)).ToList().AsReadOnly();
+        => cache.Get<ReadOnlyCollection<OsuBeatmap>>(MemoryCacheKeys.Beatmaps) ?? ReadOnlyCollection<OsuBeatmap>.Empty;
 
     internal static void AddCollections(this IMemoryCache cache, ReadOnlyCollection<OsdbCollection> newCollections)
         => cache.Set(MemoryCacheKeys.Collections, newCollections);
@@ -45,18 +51,6 @@ internal static class MemoryCacheExtensions
         where TEnumerable : IReadOnlyList<TItem>
         => cache.TryGetValue(key, out TCached? cachedValue) && cachedValue is not null && propertySelector(cachedValue).SequenceEqual(value);
     */
-
-    internal static bool IsSame<TEnumerable, TItem, TComparer>(
-        this IMemoryCache cache,
-        string key,
-        TEnumerable comparableEnumerable, 
-        TComparer equalityComparer)
-        where TEnumerable : IReadOnlyList<TItem>
-        where TComparer : IEqualityComparer<TItem>
-        => cache.TryGetValue(key, out TEnumerable? cachedEnumerable) && cachedEnumerable is not null && cachedEnumerable.SequenceEqual(comparableEnumerable, equalityComparer);
-
-    internal static bool IsSame<T>(this IMemoryCache cache, string key, T comparableValue)
-        => cache.TryGetValue(key, out T? cachedValue) && cachedValue is not null && cachedValue.Equals(comparableValue);
 }
 
 internal sealed class MemoryCacheKeys
