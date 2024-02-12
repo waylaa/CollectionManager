@@ -29,17 +29,31 @@ public sealed class OsdbCollectionReader
     public Result<OsdbDatabase> ReadFile(string filepath)
     {
         using FileStream collectionStream = File.OpenRead(filepath);
-        Result<MemoryStream> dataStreamResult = CopyOrDecompressCopy(collectionStream);
+        using MemoryStream dataStream = new();
+        using BinaryReader versionReader = new(collectionStream, Encoding.UTF8, leaveOpen: true);
 
-        if (!dataStreamResult.IsSuccessful)
+        string version = versionReader.ReadString();
+        _versionKey = _versions.GetValueOrDefault(version);
+
+        if (_versionKey == default)
         {
-            return new InvalidDataException();
+            return new InvalidDataException($"Unrecognized osdb file version (got: {version})");
         }
 
-        using MemoryStream dataStream = dataStreamResult.Value;
+        if (_versionKey is 7 or 8)
+        {
+            using GZipStream decompressionStream = new(collectionStream, CompressionMode.Decompress);
+            decompressionStream.CopyTo(dataStream);
+        }
+        else
+        {
+            versionReader.BaseStream.CopyTo(dataStream);
+        }
+
+        dataStream.Position = 0;
         using BinaryReader collectionReader = new(dataStream);
 
-        string version = collectionReader.ReadString();
+        collectionReader.ReadString(); // Version.
         DateTime date = DateTime.FromOADate(collectionReader.ReadDouble());
         string editor = collectionReader.ReadString();
         int collectionCount = collectionReader.ReadInt32();
@@ -99,32 +113,6 @@ public sealed class OsdbCollectionReader
         }
 
         return new OsdbDatabase(version, date, editor, collections.AsReadOnly());
-    }
-
-    private Result<MemoryStream> CopyOrDecompressCopy(FileStream inputStream)
-    {
-        MemoryStream dataStream = new();
-        using BinaryReader versionReader = new(inputStream, Encoding.UTF8, leaveOpen: true);
-
-        string version = versionReader.ReadString();
-        _versionKey = _versions.GetValueOrDefault(version);  
-
-        if (_versionKey == default)
-        {
-            dataStream.Dispose();
-            return new InvalidDataException($"Unrecognized osdb file version (got: {version})");
-        }
-        else if (_versionKey is 7 or 8)
-        {
-            using GZipStream decompressionStream = new(inputStream, CompressionMode.Decompress);
-            decompressionStream.CopyTo(dataStream);
-        }
-        else
-        {
-            versionReader.BaseStream.CopyTo(dataStream);
-        }
-
-        return dataStream;
     }
 
     private T? GetValueOrDefault<T>(Func<T> input, Predicate<int> version)

@@ -246,7 +246,7 @@ public sealed class OsuDatabaseReader
         }
 
         const int secondInMs = 60_000;
-        return (Math.Round(secondInMs / maxBpm), Math.Round(secondInMs / minBpm));
+        return (Math.Round(secondInMs / minBpm), Math.Round(secondInMs / maxBpm));
     }
 
     private string ReadStringConditionally()

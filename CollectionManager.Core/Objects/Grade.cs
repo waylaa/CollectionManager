@@ -3,12 +3,11 @@
 public enum Grade
 {
     SSH,
-    SH,
     SS,
+    SH,
     S,
     A,
     B,
     C,
-    D,
-    Fail
+    D
 }
