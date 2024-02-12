@@ -24,11 +24,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CollectionManagerDllTests",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CollectionManagerExtensionsDllTests", "CollectionManagerExtensionsDllTests\CollectionManagerExtensionsDllTests.csproj", "{0C2E6C9E-8FAE-43EE-BA81-A66D44F97EB1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CollectionManager.Avalonia", "CollectionManager.Avalonia\CollectionManager.Avalonia.csproj", "{FBE6B701-2FE9-40DD-8586-AC2CFABD8E3F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CollectionManager.Core", "CollectionManager.Core\CollectionManager.Core.csproj", "{91070EE8-802C-4EC3-8A82-8ECD23FFE42E}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CollectionManager.Avalonia.Desktop", "CollectionManager.Avalonia.Desktop\CollectionManager.Avalonia.Desktop.csproj", "{1267955D-9F13-4E2E-B48F-719537454510}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CollectionManager.Avalonia", "CollectionManager.Avalonia\CollectionManager.Avalonia.csproj", "{23E4F0CD-8A39-433A-BD3A-924BA04BC4D3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CollectionManager.Core", "CollectionManager.Core\CollectionManager.Core.csproj", "{91070EE8-802C-4EC3-8A82-8ECD23FFE42E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CollectionManager.Avalonia.Desktop", "CollectionManager.Avalonia.Desktop\CollectionManager.Avalonia.Desktop.csproj", "{D8D8F9A7-D103-4242-A9A8-100B37184ACE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -97,24 +97,24 @@ Global
 		{0C2E6C9E-8FAE-43EE-BA81-A66D44F97EB1}.Release|Any CPU.Build.0 = Release|Any CPU
 		{0C2E6C9E-8FAE-43EE-BA81-A66D44F97EB1}.Remote Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0C2E6C9E-8FAE-43EE-BA81-A66D44F97EB1}.Remote Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FBE6B701-2FE9-40DD-8586-AC2CFABD8E3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{FBE6B701-2FE9-40DD-8586-AC2CFABD8E3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{FBE6B701-2FE9-40DD-8586-AC2CFABD8E3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{FBE6B701-2FE9-40DD-8586-AC2CFABD8E3F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{FBE6B701-2FE9-40DD-8586-AC2CFABD8E3F}.Remote Debug|Any CPU.ActiveCfg = Release|Any CPU
-		{FBE6B701-2FE9-40DD-8586-AC2CFABD8E3F}.Remote Debug|Any CPU.Build.0 = Release|Any CPU
-		{1267955D-9F13-4E2E-B48F-719537454510}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1267955D-9F13-4E2E-B48F-719537454510}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1267955D-9F13-4E2E-B48F-719537454510}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1267955D-9F13-4E2E-B48F-719537454510}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1267955D-9F13-4E2E-B48F-719537454510}.Remote Debug|Any CPU.ActiveCfg = Release|Any CPU
-		{1267955D-9F13-4E2E-B48F-719537454510}.Remote Debug|Any CPU.Build.0 = Release|Any CPU
 		{91070EE8-802C-4EC3-8A82-8ECD23FFE42E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{91070EE8-802C-4EC3-8A82-8ECD23FFE42E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{91070EE8-802C-4EC3-8A82-8ECD23FFE42E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{91070EE8-802C-4EC3-8A82-8ECD23FFE42E}.Release|Any CPU.Build.0 = Release|Any CPU
 		{91070EE8-802C-4EC3-8A82-8ECD23FFE42E}.Remote Debug|Any CPU.ActiveCfg = Release|Any CPU
 		{91070EE8-802C-4EC3-8A82-8ECD23FFE42E}.Remote Debug|Any CPU.Build.0 = Release|Any CPU
+		{23E4F0CD-8A39-433A-BD3A-924BA04BC4D3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{23E4F0CD-8A39-433A-BD3A-924BA04BC4D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{23E4F0CD-8A39-433A-BD3A-924BA04BC4D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{23E4F0CD-8A39-433A-BD3A-924BA04BC4D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{23E4F0CD-8A39-433A-BD3A-924BA04BC4D3}.Remote Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{23E4F0CD-8A39-433A-BD3A-924BA04BC4D3}.Remote Debug|Any CPU.Build.0 = Release|Any CPU
+		{D8D8F9A7-D103-4242-A9A8-100B37184ACE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8D8F9A7-D103-4242-A9A8-100B37184ACE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8D8F9A7-D103-4242-A9A8-100B37184ACE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8D8F9A7-D103-4242-A9A8-100B37184ACE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8D8F9A7-D103-4242-A9A8-100B37184ACE}.Remote Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{D8D8F9A7-D103-4242-A9A8-100B37184ACE}.Remote Debug|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
