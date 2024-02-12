@@ -1,16 +1,19 @@
 ﻿using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Platform.Storage;
+using CollectionManager.Avalonia.Comparers;
 using CollectionManager.Avalonia.Extensions;
 using CollectionManager.Avalonia.Messages;
 using CollectionManager.Core.Infrastructure;
 using CollectionManager.Core.Models;
 using CollectionManager.Core.Readers;
+using CommunityToolkit.Mvvm.DependencyInjection;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Caching.Memory;
-using ReactiveUI;
-using Splat;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace CollectionManager.Avalonia.Services;
@@ -19,25 +22,30 @@ internal sealed class DatabaseFileDialogService
 {
     private static readonly FilePickerFileType s_fileType = new("osu! Database") { Patterns = new[] { "*osu!.db" } };
 
-    private readonly Window _target = Locator.Current.GetService<Window>()!;
+    private readonly OsuDatabaseReader _reader = Ioc.Default.GetRequiredService<OsuDatabaseReader>();
 
-    private readonly OsuDatabaseReader _reader = Locator.Current.GetService<OsuDatabaseReader>()!;
-
-    private readonly IMemoryCache _cache = Locator.Current.GetService<IMemoryCache>()!;
+    private readonly IMemoryCache _cache = Ioc.Default.GetRequiredService<IMemoryCache>();
 
     internal async Task GetDatabaseAsync()
     {
-        IReadOnlyList<IStorageFile> files = await _target.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        Window mainWindow = (global::Avalonia.Application.Current!.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)!.MainWindow!;
+
+        IReadOnlyList<IStorageFile> files = await mainWindow.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             Title = "Select the database of your osu! game folder.",
             FileTypeFilter = new[] { s_fileType },
-            SuggestedStartLocation = await _target.StorageProvider.TryGetFolderFromPathAsync(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)),
+            SuggestedStartLocation = await mainWindow.StorageProvider.TryGetFolderFromPathAsync(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)),
             AllowMultiple = false,
         });
 
+        if (files.Count == 0)
+        {
+            return;
+        }
+
         using IStorageFile database = files[0];
 
-        if (_cache.IsSame(IMemoryCacheKeys.DatabaseFilePath, database.Path.LocalPath))
+        if (IsSame(MemoryCacheKeys.DatabaseFilePath, database.Path.LocalPath))
         {
             return;
         }
@@ -49,11 +57,25 @@ internal sealed class DatabaseFileDialogService
             return;
         }
 
-        if (_cache.IsSame<ReadOnlyCollection<OsuBeatmap>, OsuBeatmap>(IMemoryCacheKeys.Beatmaps, result.Value.Beatmaps))
+        if (IsSame<ReadOnlyCollection<OsuBeatmap>, OsuBeatmap, BeatmapTitleEqualityComparer>(MemoryCacheKeys.Beatmaps, result.Value.Beatmaps, new BeatmapTitleEqualityComparer()))
         {
             return;
         }
 
-        MessageBus.Current.SendMessage(new DatabaseMessage(result.Value));
+        _cache.AddDatabaseFilePath(database.Path.LocalPath);
+        _cache.AddBeatmaps(result.Value.Beatmaps);
+        
+        WeakReferenceMessenger.Default.Send(new BeatmapsMessage(result.Value.Beatmaps));
     }
+
+    private bool IsSame<TEnumerable, TItem, TComparer>(
+        string key,
+        TEnumerable comparableEnumerable,
+        TComparer equalityComparer)
+        where TEnumerable : IReadOnlyList<TItem>
+        where TComparer : IEqualityComparer<TItem>
+    => _cache.TryGetValue(key, out TEnumerable? cachedEnumerable) && cachedEnumerable is not null && cachedEnumerable.SequenceEqual(comparableEnumerable, equalityComparer);
+
+    internal bool IsSame<T>(string key, T comparableValue)
+        => _cache.TryGetValue(key, out T? cachedValue) && cachedValue is not null && cachedValue.Equals(comparableValue);
 }

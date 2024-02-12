@@ -4,4 +4,4 @@ using System.Collections.ObjectModel;
 
 namespace CollectionManager.Avalonia.Messages;
 
-internal sealed class CollectionsMessage(ReadOnlyCollection<OsdbCollection> newCollections) : ValueChangedMessage<ReadOnlyCollection<OsdbCollection>>(newCollections);
+internal sealed class BeatmapsMessage(ReadOnlyCollection<OsuBeatmap> newBeatmaps) : ValueChangedMessage<ReadOnlyCollection<OsuBeatmap>>(newBeatmaps);
