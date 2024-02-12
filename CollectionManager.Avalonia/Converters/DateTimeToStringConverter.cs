@@ -14,7 +14,7 @@ public sealed class DateTimeToStringConverter : MarkupExtensionImpl, IValueConve
             return string.Empty;
         }
 
-        return dateTime.ToString(culture); // todo: check if '.ToShortDateString()' is better.
+        return dateTime.ToShortDateString();
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
