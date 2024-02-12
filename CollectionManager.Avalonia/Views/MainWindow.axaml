@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:wnd="using:FluentAvalonia.UI.Windowing"
         xmlns:views="using:CollectionManager.Avalonia.Views"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1300" d:DesignHeight="450"
+        MinWidth="1300" MinHeight="450"
         x:Class="CollectionManager.Avalonia.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
         Title="CollectionManager">
