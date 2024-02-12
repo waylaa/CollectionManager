@@ -1,16 +1,18 @@
-<rxui:ReactiveUserControl xmlns="https://github.com/avaloniaui"
+<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-			 xmlns:rxui="http://reactiveui.net"
-             xmlns:vm="using:CollectionManager.Avalonia.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+			 xmlns:ui="using:FluentAvalonia.UI.Controls"
+			 xmlns:i="clr-namespace:Avalonia.Xaml.Interactions.Core;assembly=Avalonia.Xaml.Interactions"
+			 xmlns:vm="clr-namespace:CollectionManager.Avalonia.ViewModels"
+			 xmlns:models="using:CollectionManager.Core.Models"
+			 xmlns:cnvrt="using:CollectionManager.Avalonia.Converters"
+             mc:Ignorable="d" d:DesignWidth="1300" d:DesignHeight="600"
              x:Class="CollectionManager.Avalonia.Views.MainView"
-             x:DataType="vm:MainViewViewModel"
-			 x:TypeArguments="vm:MainViewViewModel">
+             x:DataType="vm:MainViewViewModel">
 	
   <Design.DataContext>
-	  <vm:MainViewViewModel />
+    <vm:MainViewViewModel />
   </Design.DataContext>
 
 	<Panel>
@@ -18,8 +20,8 @@
 			<Menu DockPanel.Dock="Top">
 				<MenuItem Header="File">
 					<MenuItem Header="Open">
-						<MenuItem Header="Collection (.osdb/.db)" x:Name="AddCollections" />
-						<MenuItem Header="osu! Database" x:Name="AddDatabase" />
+						<MenuItem Header="Collection (.osdb/.db)" Command="{Binding LoadCollectionsCommand}" />
+						<MenuItem Header="osu! Database" Command="{Binding LoadDatabaseCommand}" />
 					</MenuItem>
 
 					<MenuItem Header="Save">
@@ -32,7 +34,21 @@
 						<MenuItem Header="Missing beatmaps" />
 					</MenuItem>
 
-					<MenuItem Header="Clear" />
+					<MenuItem Header="Unload" Command="{Binding UnloadDatabaseCommand}" />
+				</MenuItem>
+
+				<MenuItem Header="Online">
+					<MenuItem Header="Show map downloads" />
+					<MenuItem Header="Download all missing maps" />
+					<MenuItem Header="Generate collections" />
+				</MenuItem>
+
+				<MenuItem Header="Osustats collections" />
+
+				<MenuItem Header="Beatmap listing" Command="{Binding GetAllBeatmapsCommand}" />
+
+				<MenuItem Header="Settings">
+					<MenuItem Header="Reset" />
 				</MenuItem>
 			</Menu>
 
@@ -47,24 +63,52 @@
 					<RowDefinition Height="auto" />
 					<RowDefinition />
 				</Grid.RowDefinitions>
-				
-				<AutoCompleteBox Watermark="Search collections"
+
+				<TextBox Watermark="Search collections"
 								 Grid.Column="0"
 								 Grid.Row="0"
-								 x:Name="CollectionsQuery" />
+								 Text="{Binding CollectionsQuery}"
+								 IsEnabled="{Binding IsDatabaseAndCollectionsLoaded}"
+								 Margin="5"/>
 
 				<DataGrid SelectionMode="Extended"
+						  Background="Transparent"
+						  CanUserResizeColumns="True"
+						  CanUserReorderColumns="True"
+						  IsReadOnly="True"
 						  Grid.Column="0"
 						  Grid.Row="1"
-						  x:Name="Collections">
-					
+						  ItemsSource="{Binding LoadedCollections}">
+
+					<DataGrid.ContextFlyout>
+						<ui:FAMenuFlyout>
+							<ui:MenuFlyoutItem Text="Create" Command="{Binding CreateCollectionCommand}"/>
+							<ui:MenuFlyoutItem Text="Rename" />
+							<ui:MenuFlyoutItem Text="Delete" Command="{Binding DeleteCollectionCommand}" />
+							<ui:MenuFlyoutItem Text="Copy" />
+							<ui:MenuFlyoutItem Text="Paste" />
+							<ui:MenuFlyoutItem Text="Duplicate" />
+							<ui:MenuFlyoutItem Text="Merge" />
+							<ui:MenuFlyoutItem Text="Intersection" />
+							<ui:MenuFlyoutItem Text="Difference" />
+							<ui:MenuFlyoutItem Text="Inverse" />
+							<ui:MenuFlyoutItem Text="Export" />
+						</ui:FAMenuFlyout>
+					</DataGrid.ContextFlyout>
+
 					<DataGrid.Columns>
 						<DataGridTextColumn Header="Name" Binding="{Binding Name}" />
 						<DataGridTextColumn Header="Count" Binding="{Binding Beatmaps.Count}" />
 						<DataGridTextColumn Header="Missing" Binding="{Binding MissingBeatmaps.Count}" />
 					</DataGrid.Columns>
+					
+					<Interaction.Behaviors>
+						<EventTriggerBehavior EventName="SelectionChanged">
+							<InvokeCommandAction Command="{Binding CollectionSelectionChangedCommand}" PassEventArgsToCommand="True" />
+						</EventTriggerBehavior>
+					</Interaction.Behaviors>
 				</DataGrid>
-				
+
 				<GridSplitter ResizeDirection="Columns"
 							  Margin="1"
 							  Grid.Column="1" />
@@ -72,20 +116,69 @@
 				<AutoCompleteBox Watermark="Search beatmaps"
 								 Grid.Column="2"
 								 Grid.Row="0"
-								 x:Name="BeatmapsQuery" />
+								 Text="{Binding BeatmapsQuery}"
+								 IsEnabled="{Binding IsDatabaseAndCollectionsLoaded}"
+								 Margin="5" />
 
 				<DataGrid SelectionMode="Extended"
+						  Background="Transparent"
+						  CanUserResizeColumns="True"
+						  CanUserReorderColumns="True"
+						  IsReadOnly="True"
 						  Grid.Column="2"
 						  Grid.Row="1"
-						  x:Name="Beatmaps">
+						  ItemsSource="{Binding LoadedBeatmaps}">
+					
+					<DataGrid.Styles>
+						<Style Selector="TextBlock">
+							<Setter Property="TextWrapping" Value="Wrap" />
+						</Style>
+					</DataGrid.Styles>
 
 					<DataGrid.Columns>
-						<DataGridTextColumn Header="Name" />
-						<DataGridTextColumn Header="Difficulty" />
-						<DataGridTextColumn Header="★" />
+						<DataGridTextColumn Header="Name" Binding="{Binding Title}" Width="200" />
+						<DataGridTextColumn Header="Difficulty" Binding="{Binding DifficultyName}" Width="200" />
+
+						<DataGridTemplateColumn Header="★">
+							<DataGridTemplateColumn.CellTemplate>
+								<DataTemplate>
+									<TextBlock Margin="10" HorizontalAlignment="Center" VerticalAlignment="Center">
+										<TextBlock.Text>
+											<MultiBinding Converter="{cnvrt:StarRatingsToNomodStarRatingAsStringConverter}">
+												<Binding Path="StandardStarRatings" />
+												<Binding Path="TaikoStarRatings" />
+												<Binding Path="CtbStarRatings" />
+												<Binding Path="ManiaStarRatings" />
+											</MultiBinding>
+										</TextBlock.Text>
+									</TextBlock>
+								</DataTemplate>
+							</DataGridTemplateColumn.CellTemplate>
+						</DataGridTemplateColumn>
+						
+						<DataGridTextColumn Header="AR" Binding="{Binding ApproachRate, Converter={cnvrt:ByteOrFloatAsObjectToStringConverter}, Mode=OneWay}" />
+						<DataGridTextColumn Header="CS" Binding="{Binding CircleSize, Converter={cnvrt:ByteOrFloatAsObjectToStringConverter}, Mode=OneWay}" />
+						<DataGridTextColumn Header="HP" Binding="{Binding HpDrain, Converter={cnvrt:ByteOrFloatAsObjectToStringConverter}, Mode=OneWay}" />
+						<DataGridTextColumn Header="OD" Binding="{Binding OverallDifficulty, Converter={cnvrt:ByteOrFloatAsObjectToStringConverter}, Mode=OneWay}" />
+						<DataGridTextColumn Header="BPM" Binding="{Binding Bpm, Converter={cnvrt:BpmToStringConverter}, Mode=OneWay}" />
+						<DataGridTextColumn Header="State" Binding="{Binding RankStatus, Converter={cnvrt:StatusToStringConverter}, Mode=OneWay}" />
+						
+						<DataGridTextColumn Header="Rank">
+							<DataGridTextColumn.Binding>
+								<MultiBinding Converter="{cnvrt:GradesToStringConverter}">
+									<Binding Path="StandardGrade" Mode="OneWay" />
+									<Binding Path="TaikoGrade" Mode="OneWay" />
+									<Binding Path="CtbGrade" Mode="OneWay" />
+									<Binding Path="ManiaGrade" Mode="OneWay" />
+								</MultiBinding>
+							</DataGridTextColumn.Binding>
+						</DataGridTextColumn>
+						
+						<DataGridTextColumn Header="Last Played" Binding="{Binding LastPlayed, Converter={cnvrt:DateTimeToStringConverter}, Mode=OneWay}" />
+						<DataGridTextColumn Header="Last Update" Binding="{Binding LastUpdated, Converter={cnvrt:DateTimeToStringConverter}, Mode=OneWay}" />
 					</DataGrid.Columns>
 				</DataGrid>
 			</Grid>
 		</DockPanel>
 	</Panel>
-</rxui:ReactiveUserControl>
+</UserControl>
