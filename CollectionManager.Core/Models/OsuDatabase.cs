@@ -1,13 +1,10 @@
 ﻿using CollectionManager.Core.Objects;
+using System.Collections.Frozen;
 using System.Collections.ObjectModel;
 
 namespace CollectionManager.Core.Models;
 
-public sealed record OsuDatabase
-(
-    int Version,
-    ReadOnlyCollection<OsuBeatmap> Beatmaps
-);
+public sealed record OsuDatabase(int Version, ReadOnlyCollection<OsuBeatmap> Beatmaps);
 
 public sealed record OsuBeatmap
 (
@@ -21,10 +18,10 @@ public sealed record OsuBeatmap
     object CircleSize,
     object HpDrain,
     object OverallDifficulty,
-    KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? StandardStarRatings,
-    KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? TaikoStarRatings,
-    KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? CtbStarRatings,
-    KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? ManiaStarRatings,
+    KeyValuePair<Ruleset, FrozenDictionary<Mods, double>>? StandardStarRatings,
+    KeyValuePair<Ruleset, FrozenDictionary<Mods, double>>? TaikoStarRatings,
+    KeyValuePair<Ruleset, FrozenDictionary<Mods, double>>? CtbStarRatings,
+    KeyValuePair<Ruleset, FrozenDictionary<Mods, double>>? ManiaStarRatings,
     (double minBpm, double maxBpm) Bpm,
     int DifficultyId,
     int Id,
