@@ -1,7 +1,7 @@
 ﻿using CollectionManager.Core.Infrastructure;
 using CollectionManager.Core.Models;
 using CollectionManager.Core.Objects;
-using System.Collections.ObjectModel;
+using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
 
 namespace CollectionManager.Core.Readers;
@@ -59,10 +59,10 @@ public sealed class OsuDatabaseReader
 
                 _databaseReader.BaseStream.Seek(sizeof(double), SeekOrigin.Current); // Slider velocity.
 
-                KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? standardModCombinatedStarRatings = GetValueOrDefault(() => ReadModCombinatedStarRatings(Ruleset.Osu), version => version >= 20140609);
-                KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? taikoModCombinatedStarRatings = GetValueOrDefault(() => ReadModCombinatedStarRatings(Ruleset.Taiko), version => version >= 20140609);
-                KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? ctbModCombinatedStarRatings = GetValueOrDefault(() => ReadModCombinatedStarRatings(Ruleset.Ctb), version => version >= 20140609);
-                KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? maniaModCombinatedStarRatings = GetValueOrDefault(() => ReadModCombinatedStarRatings(Ruleset.Mania), version => version >= 20140609);
+                KeyValuePair<Ruleset, FrozenDictionary<Mods, double>>? standardModCombinatedStarRatings = GetValueOrDefault(() => ReadModCombinatedStarRatings(Ruleset.Osu), version => version >= 20140609);
+                KeyValuePair<Ruleset, FrozenDictionary<Mods, double>>? taikoModCombinatedStarRatings = GetValueOrDefault(() => ReadModCombinatedStarRatings(Ruleset.Taiko), version => version >= 20140609);
+                KeyValuePair<Ruleset, FrozenDictionary<Mods, double>>? ctbModCombinatedStarRatings = GetValueOrDefault(() => ReadModCombinatedStarRatings(Ruleset.Ctb), version => version >= 20140609);
+                KeyValuePair<Ruleset, FrozenDictionary<Mods, double>>? maniaModCombinatedStarRatings = GetValueOrDefault(() => ReadModCombinatedStarRatings(Ruleset.Mania), version => version >= 20140609);
 
                 _databaseReader.BaseStream.Seek(sizeof(int) * 3, SeekOrigin.Current); // Drain time in seconds, total time, audio preview in milliseconds.
 
@@ -144,7 +144,7 @@ public sealed class OsuDatabaseReader
         }
     }
 
-    private KeyValuePair<Ruleset, ReadOnlyDictionary<Mods, double>>? ReadModCombinatedStarRatings(Ruleset ruleset)
+    private KeyValuePair<Ruleset, FrozenDictionary<Mods, double>>? ReadModCombinatedStarRatings(Ruleset ruleset)
     {
         int modCombinatedStarRatingsCount = _databaseReader.ReadInt32();
 
@@ -183,7 +183,7 @@ public sealed class OsuDatabaseReader
             }
         }
 
-        return KeyValuePair.Create(ruleset, modCombinatedStarRatings.AsReadOnly());
+        return KeyValuePair.Create(ruleset, modCombinatedStarRatings.ToFrozenDictionary());
     }
 
     private (double minBpm, double maxBpm) ReadBpm()
@@ -252,16 +252,16 @@ public sealed class OsuDatabaseReader
     private string ReadStringConditionally()
         => _databaseReader.ReadByte() == 11 ? _databaseReader.ReadString() : string.Empty;
 
-    private ReadOnlyCollection<char> ReadCharsConditionally()
+    private ReadOnlyMemory<char> ReadCharsConditionally()
     {
         int length = _databaseReader.ReadInt32();
-        return length > 0 ? _databaseReader.ReadChars(length).AsReadOnly() : ReadOnlyCollection<char>.Empty;
+        return length > 0 ? _databaseReader.ReadChars(length) : ReadOnlyMemory<char>.Empty;
     }
 
-    private ReadOnlyCollection<byte> ReadBytesConditionally()
+    private ReadOnlyMemory<byte> ReadBytesConditionally()
     {
         int length = _databaseReader.ReadInt32();
-        return length > 0 ? _databaseReader.ReadBytes(length).AsReadOnly() : ReadOnlyCollection<byte>.Empty;
+        return length > 0 ? _databaseReader.ReadBytes(length) : ReadOnlyMemory<byte>.Empty;
     }
 
     private object? ReadConditionally() => _databaseReader.ReadByte() switch

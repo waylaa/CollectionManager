@@ -11,16 +11,16 @@ public sealed class OsdbCollectionReader
 {
     private readonly FrozenDictionary<string, int> _versions = new Dictionary<string, int>()
     {
-        {"o!dm", 1},
-        {"o!dm2", 2},
-        {"o!dm3", 3},
-        {"o!dm4", 4},
-        {"o!dm5", 5},
-        {"o!dm6", 6},
-        {"o!dm7", 7},
-        {"o!dm8", 8},
-        {"o!dm7min", 1007},
-        {"o!dm8min", 1008},
+        { "o!dm", 1 },
+        { "o!dm2", 2 },
+        { "o!dm3", 3 },
+        { "o!dm4", 4 },
+        { "o!dm5", 5 },
+        { "o!dm6", 6 },
+        { "o!dm7", 7 },
+        { "o!dm8", 8 },
+        { "o!dm7min", 1007 },
+        { "o!dm8min", 1008 },
 
     }.ToFrozenDictionary();
 
