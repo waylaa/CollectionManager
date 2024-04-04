@@ -7,7 +7,7 @@
 			 xmlns:vm="clr-namespace:CollectionManager.Avalonia.ViewModels"
 			 xmlns:models="using:CollectionManager.Core.Models"
 			 xmlns:cnvrt="using:CollectionManager.Avalonia.Converters"
-             mc:Ignorable="d" d:DesignWidth="1300" d:DesignHeight="600"
+             mc:Ignorable="d" d:DesignWidth="1500" d:DesignHeight="600"
              x:Class="CollectionManager.Avalonia.Views.MainView"
              x:DataType="vm:MainViewViewModel">
 	
@@ -136,10 +136,10 @@
 					</DataGrid.Styles>
 
 					<DataGrid.Columns>
-						<DataGridTextColumn Header="Name" Binding="{Binding Title}" Width="200" />
-						<DataGridTextColumn Header="Difficulty" Binding="{Binding DifficultyName}" Width="200" />
+						<DataGridTextColumn Header="Name" MinWidth="150" Width="200" Binding="{Binding Title}" />
+						<DataGridTextColumn Header="Difficulty" MinWidth="150" Width="200" Binding="{Binding DifficultyName}" />
 
-						<DataGridTemplateColumn Header="★">
+						<DataGridTemplateColumn Header="★" MinWidth="55">
 							<DataGridTemplateColumn.CellTemplate>
 								<DataTemplate>
 									<TextBlock Margin="10" HorizontalAlignment="Center" VerticalAlignment="Center">
@@ -151,19 +151,32 @@
 												<Binding Path="ManiaStarRatings" />
 											</MultiBinding>
 										</TextBlock.Text>
+
+										<ToolTip.Tip>
+											<TextBlock>
+												<TextBlock.Text>
+													<MultiBinding Converter="{cnvrt:StarRatingsToFlyoutStringConverter}">
+														<Binding Path="StandardStarRatings" />
+														<Binding Path="TaikoStarRatings" />
+														<Binding Path="CtbStarRatings" />
+														<Binding Path="ManiaStarRatings" />
+													</MultiBinding>
+												</TextBlock.Text>
+											</TextBlock>
+										</ToolTip.Tip>
 									</TextBlock>
 								</DataTemplate>
 							</DataGridTemplateColumn.CellTemplate>
 						</DataGridTemplateColumn>
 						
-						<DataGridTextColumn Header="AR" Binding="{Binding ApproachRate, Converter={cnvrt:ByteOrFloatAsObjectToStringConverter}, Mode=OneWay}" />
-						<DataGridTextColumn Header="CS" Binding="{Binding CircleSize, Converter={cnvrt:ByteOrFloatAsObjectToStringConverter}, Mode=OneWay}" />
-						<DataGridTextColumn Header="HP" Binding="{Binding HpDrain, Converter={cnvrt:ByteOrFloatAsObjectToStringConverter}, Mode=OneWay}" />
-						<DataGridTextColumn Header="OD" Binding="{Binding OverallDifficulty, Converter={cnvrt:ByteOrFloatAsObjectToStringConverter}, Mode=OneWay}" />
-						<DataGridTextColumn Header="BPM" Binding="{Binding Bpm, Converter={cnvrt:BpmToStringConverter}, Mode=OneWay}" />
-						<DataGridTextColumn Header="State" Binding="{Binding RankStatus, Converter={cnvrt:StatusToStringConverter}, Mode=OneWay}" />
+						<DataGridTextColumn Header="AR" MinWidth="55" Binding="{Binding ApproachRate, Converter={cnvrt:ByteOrFloatAsObjectToStringConverter}, Mode=OneWay}" />
+						<DataGridTextColumn Header="CS" MinWidth="55" Binding="{Binding CircleSize, Converter={cnvrt:ByteOrFloatAsObjectToStringConverter}, Mode=OneWay}" />
+						<DataGridTextColumn Header="HP" MinWidth="55" Binding="{Binding HpDrain, Converter={cnvrt:ByteOrFloatAsObjectToStringConverter}, Mode=OneWay}" />
+						<DataGridTextColumn Header="OD" MinWidth="55" Binding="{Binding OverallDifficulty, Converter={cnvrt:ByteOrFloatAsObjectToStringConverter}, Mode=OneWay}" />
+						<DataGridTextColumn Header="BPM" MinWidth="55" Binding="{Binding Bpm, Converter={cnvrt:BpmToStringConverter}, Mode=OneWay}" />
+						<DataGridTextColumn Header="State" MinWidth="120" Binding="{Binding RankStatus, Converter={cnvrt:StatusToStringConverter}, Mode=OneWay}" />
 						
-						<DataGridTextColumn Header="Rank">
+						<DataGridTextColumn Header="Rank" MinWidth="55">
 							<DataGridTextColumn.Binding>
 								<MultiBinding Converter="{cnvrt:GradesToStringConverter}">
 									<Binding Path="StandardGrade" Mode="OneWay" />
@@ -174,8 +187,8 @@
 							</DataGridTextColumn.Binding>
 						</DataGridTextColumn>
 						
-						<DataGridTextColumn Header="Last Played" Binding="{Binding LastPlayed, Converter={cnvrt:DateTimeToStringConverter}, Mode=OneWay}" />
-						<DataGridTextColumn Header="Last Update" Binding="{Binding LastUpdated, Converter={cnvrt:DateTimeToStringConverter}, Mode=OneWay}" />
+						<DataGridTextColumn Header="Last Played" MinWidth="120" Binding="{Binding LastPlayed, Converter={cnvrt:DateTimeToStringConverter}, Mode=OneWay}" />
+						<DataGridTextColumn Header="Last Update" MinWidth="120" Binding="{Binding LastUpdated, Converter={cnvrt:DateTimeToStringConverter}, Mode=OneWay}" />
 					</DataGrid.Columns>
 				</DataGrid>
 			</Grid>
