@@ -30,7 +30,7 @@ internal sealed class CollectionFileDialogService
         IReadOnlyList<IStorageFile> files = await mainWindow.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
             Title = "Select the collections to load.",
-            FileTypeFilter = new[] { s_fileType },
+            FileTypeFilter = [s_fileType],
             SuggestedStartLocation = await mainWindow.StorageProvider.TryGetWellKnownFolderAsync(WellKnownFolder.Downloads),
             AllowMultiple = true,
         });
